@@ -3,14 +3,10 @@
 
 #include "listlib.h"
 
-// TODO: enum for errors DONE
-
-// TODO: вставка в хвост, голову и после элемента DONE
-// TODO: graphviz DONE
-// TODO: двухсвязный, вставка перед элементом DONE
 // TODO : переделать dump, чтобы выводило в каком порядке в памяти (адресов), а не в списке, сделать выравнивание
 // TODO: удаление элемента
 // TODO: список свободных
+//https://github.com/SapozhnikovM2009/DedLists Сане скинь
 
 int ListInit(list* lst, int capacity)
 {
@@ -96,6 +92,8 @@ void ListDestroy(list* lst)
 
 int FindFreeCell(list* lst)
 {
+    // TODO: free list
+    // TODO*: realloc
     for (int i = 1; i < lst->capacity; i++)
     {
         if (lst->next[i] == -1)
@@ -103,11 +101,17 @@ int FindFreeCell(list* lst)
             return i;
         }
     }
+    return NULL_ADDRESS;
 }
 
 int InsertTail(list* lst, int value)
 {
     int free_cell = FindFreeCell(lst);
+    if (free_cell == NULL_ADDRESS)
+    {
+        fprintf(stderr, "InsertHead error: can't find free cell\n");
+        return NULL_ADDRESS;
+    }
     if (lst->size == 0)
     {
         lst->next[free_cell] = 0;
@@ -134,6 +138,11 @@ int InsertTail(list* lst, int value)
 int InsertHead(list* lst, int value)
 {
     int free_cell = FindFreeCell(lst);
+    if (free_cell == NULL_ADDRESS)
+    {
+        fprintf(stderr, "InsertHead error: can't find free cell\n");
+        return NULL_ADDRESS;
+    }
     if (lst->size == 0)
     {
         lst->next[free_cell] = 0;
@@ -158,14 +167,26 @@ int InsertHead(list* lst, int value)
 
 int InsertAfterAddress(list* lst, int address, int value)
 {
-    int free_cell = FindFreeCell(lst);
-    lst->next[free_cell] = lst->next[address];
-    lst->prev[free_cell] = address;
-    lst->prev[lst->next[address]] = free_cell;
-    lst->next[address] = free_cell;
-    lst->data[free_cell] = value;
-    lst->size++;
-    return free_cell;
+    if (address == lst->tail)
+    {
+        return InsertTail(lst, value);
+    }
+    else
+    {
+        int free_cell = FindFreeCell(lst);
+        if (free_cell == NULL_ADDRESS)
+        {
+            fprintf(stderr, "InsertHead error: can't find free cell\n");
+            return NULL_ADDRESS;
+        }
+        lst->next[free_cell] = lst->next[address];
+        lst->prev[free_cell] = address;
+        lst->prev[lst->next[address]] = free_cell;
+        lst->next[address] = free_cell;
+        lst->data[free_cell] = value;
+        lst->size++;
+        return free_cell;
+    }
 }
 
 int InsertBeforeAddress(list* lst, int address, int value)
@@ -177,6 +198,11 @@ int InsertBeforeAddress(list* lst, int address, int value)
     else
     {
         int free_cell = FindFreeCell(lst);
+        if (free_cell == NULL_ADDRESS)
+        {
+            fprintf(stderr, "InsertHead error: can't find free cell\n");
+            return NULL_ADDRESS;
+        }
         lst->next[lst->prev[address]] = free_cell;
         lst->prev[free_cell] = lst->prev[address];
         lst->prev[address] = free_cell;
@@ -189,12 +215,18 @@ int InsertBeforeAddress(list* lst, int address, int value)
 
 void ListGraphicDump(list* lst, char* file_name)
 {
-    FILE* out_file = fopen(file_name, "w+");
+    FILE* out_file = fopen(file_name, "w");
+    if (out_file == NULL)
+    {
+        fprintf(stderr, "Can't open file %s\n", file_name);
+        return;
+    }
     fprintf(out_file, "digraph structs\n");
     fprintf(out_file, "{\n");
 
     fprintf(out_file, "\trankdir = LR;\n");
 
+    /*
     int ind = lst->head;
     int num = 0;
     while (ind != 0 || num != lst->size + 1)
@@ -224,25 +256,58 @@ void ListGraphicDump(list* lst, char* file_name)
         num++;
         //fprintf(out_file, "%d ", lst->data[ind]);
         ind = lst->next[ind];
+    }*/
+
+    int ind = 0;
+    while (ind < lst->capacity)
+    {
+        if (ind != lst->tail && ind != lst->head && ind != 0)
+        {
+            fprintf(out_file, "\t%d[shape = record, fillcolor = \"lightgreen\", color = \"green\", style = \"filled, rounded\", ", ind);
+            fprintf(out_file, "label = \" value : %d | {address : %d} | {next : %d | prev : %d}\"];\n", lst->data[ind], ind, lst->next[ind], lst->prev[ind]);
+        }
+        if (ind == lst->tail)
+        {
+            fprintf(out_file, "\t%d[shape = record, fillcolor = \"pink\", color = \"red\", style = \"filled, rounded\", ", ind);
+            fprintf(out_file, "label = \" value : %d | {address : %d} | {next : %d | prev : %d}\"];\n", lst->data[ind], ind, lst->next[ind], lst->prev[ind]);
+        }
+        if (ind == lst->head)
+        {
+            fprintf(out_file, "\t%d[shape = record, fillcolor = \"lightblue\", color = \"blue\", style = \"filled, rounded\", ", ind);
+            fprintf(out_file, "label = \" value : %d | {address : %d} | {next : %d | prev : %d}\"];\n", lst->data[ind], ind, lst->next[ind], lst->prev[ind]);
+        }
+        if (ind == 0)
+        {
+            fprintf(out_file, "\t%d[shape = record, fillcolor = \"violet\", color = \"purple\", style = \"filled, rounded\", ", ind);
+            fprintf(out_file, "label = \" value : %d | {address : %d} | {next : %d | prev : %d}\"];\n", lst->data[ind], ind, lst->next[ind], lst->prev[ind]);
+        }
+
+        if (ind < lst->size) fprintf(out_file, "\t%d->%d [color = transparent];\n\n", ind, ind + 1);
+        if (ind == lst->size - 1)
+        { 
+            fprintf(out_file, "\t%d->%d [color = transparent];\n\n", ind + 1, 0);
+        }
+        //fprintf(out_file, "%d ", lst->data[ind]);
+        ind++;
+    }
+    
+    ind = 0;
+    while (ind < lst->capacity)
+    {
+        fprintf(out_file, "\t%d->%d;\n", ind, lst->next[ind]);
+        fprintf(out_file, "\t%d->%d[style = \"dashed\"];\n", ind, lst->prev[ind]);
+        //if (num < lst->size) fprintf(out_file, "\t%d->%d;\n\n", num, num + 1);
+        //if (num < lst->size - 1) fprintf(out_file, "\t%d->%d;\n\n", num + 1, num);
+        /*if (num == lst->size - 1)
+        { 
+            fprintf(out_file, "\t%d->%d;\n\n", num + 1, 0);
+            fprintf(out_file, "\t%d->%d;\n\n", 0, num + 1);
+        }
+        num++;*/
+        //fprintf(out_file, "%d ", lst->data[ind]);
+        ind++;
     }
 
     fprintf(out_file, "}\n");
     fclose(out_file);
 }
-/*
-{
-		edge[color=white];
-		head->tail;
-	}
-	{rank = same; 0; head;}
-	{rank = same; 5; tail;}
-/*
-digraph structs {
-  rankdir = LR;
-  1[shape=record,fillcolor="lightgreen",color="green",style="filled, rounded",label=" value 5 | {next 3 | prev 4}" ];
-  2[shape=record,style="rounded",label=" value 8 | {next 1 | prev 2}" ];
-  1->2;
-
-
-
-}*/

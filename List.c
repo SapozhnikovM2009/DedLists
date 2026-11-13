@@ -4,7 +4,7 @@
 int main()
 {
     list lst;
-    ListInit(&lst, 12);
+    ListInit(&lst, 16);
     int a = InsertHead(&lst, 4);
     int b = InsertHead(&lst, 5);
     int c = InsertHead(&lst, 6);
@@ -15,6 +15,7 @@ int main()
     //int e = InsertAfterAddress(&lst, c, 42342);
     //a = InsertHead(&lst, 10);
     //a = InsertHead(&lst, 11);
+    InsertAfterAddress(&lst, a, 0xDED);
     ListGraphicDump(&lst, "graph.dot");
     ListPrint(&lst);
     ListDestroy(&lst);

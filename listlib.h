@@ -3,8 +3,12 @@
 
 #define POISON -24012009
 
-#define ERROR_OUTPUT -1
-#define NORMAL_OUTPUT 1
+enum
+{
+    ERROR_OUTPUT = -1,
+    NULL_ADDRESS = 0,
+    NORMAL_OUTPUT = 1
+};
 
 typedef struct
 {
