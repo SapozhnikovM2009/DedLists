@@ -19,6 +19,7 @@ typedef struct
     int head;
     int capacity;
     int size;
+    int next_free;
 }list;
 
 int ListInit(list* lst, int capacity);
@@ -30,5 +31,9 @@ int InsertHead(list* lst, int value);
 int InsertAfterAddress(list* lst, int address, int value);
 void ListGraphicDump(list* lst, char* file_name);
 int InsertBeforeAddress(list* lst, int address, int value);
+void RemoveListElem(list* lst, int address);
+void ListVerify(list* lst);
+void RemoveListHead(list* lst);
+void RemoveListTail(list* lst);
 
 #endif
